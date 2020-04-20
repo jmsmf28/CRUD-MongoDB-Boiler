@@ -1,19 +1,11 @@
-const express = require('express')
 const mongoose = require('mongoose')
 
+const databaseUrl = 'mongodb://localhost:27017/task-app-api'
 
-const app = express()
-
-const connect = mongoose.connect('mongodb://localhost:27017/task',
+mongoose.connect(databaseUrl,
     {
       useNewUrlParser: true, useUnifiedTopology: true,
       useCreateIndex: true, useFindAndModify: false
     })
     .then(() => console.log('MongoDB Connected...'))
     .catch(err => console.log(err));
-
-const PORT = process.env.PORT || 8000
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`)
-})
