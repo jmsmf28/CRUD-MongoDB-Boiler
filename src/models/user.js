@@ -1,61 +1,102 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 const userSchema = new mongoose.Schema({
-        name: {
-            type: String,
-            trim: true, // white spaces will be removed from both sides of the string
-            required: true,
-            max: 32
-        },
-        email: {
-            type: String,
-            trim: true,
-            required: true,
-            unique: true,
-            validate(value){
-                if(!validator.isEmail(value)){
-                    throw new Error('Email is invalid')
-                }
+    name: {
+        type: String,
+        trim: true, // white spaces will be removed from both sides of the string
+        required: true,
+        max: 32,
+    },
+    email: {
+        type: String,
+        unique: true,
+        trim: true,
+        required: true,
+        lowercase: true,
+        unique: true,
+        validate(value) {
+            if (!validator.isEmail(value)) {
+                throw new Error('Email is invalid');
             }
         },
-        hashed_password: {
+    },
+    hashed_password: {
+        type: String,
+        required: true,
+    },
+    role: {
+        type: String,
+        default: 'user',
+    },
+    tokens: [{
+        token: {
             type: String,
-            required: true,
-            min: 6
-        },
-        role: {
-            type: String,
-            default: 'user'
-        },
-        resetPasswordLink: {
-            data: String,
-            default: ''
+            required: true
         }
+    }],
+    resetPasswordLink: {
+        data: String,
+        default: '',
     },
-    {timestamp:true}
-)
+}, {
+    timestamp: true,
+});
 
+userSchema.methods.generateAuthToken = async function () {
+    const user = this
+    const token = jwt.sign({
+        _id: user._id.toString()
+    }, '2313123123121vdsfdsgsd58***a+', {
+        expiresIn: '2h'
+    })
 
-userSchema.methods = {
-    authenticate: function(plainText) {
-        return this.encryptPassword(plainText) === this.hashed_password;
-    },
+    user.tokens = user.tokens.concat({
+        token
+    })
+    await user.save()
 
-    encryptPassword: function(password){
-        if(!password) return '';
-        try {
-            return crypto.createHmac('sha1', this.salt)
-                .update(password)
-                .digest('hex');
-        } catch (err) {
-            return '';
-        }
-    },
+    return token
 
-    makeSalt: function(){
-        return Math.round(new Date().valueOf() * Math.random()) + '';
-    }
 }
 
-module.exports = mongoose.model('User', userSchema);
+userSchema.statics.findByCredentials = async (email, password) => {
+    const user = await User.findOne({
+        email: email,
+    });
+
+    if (!user) {
+        throw new Error('Unable to login');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.hashed_password);
+
+    if (!isMatch) {
+        throw new Error('Unable to login');
+    }
+
+    return user;
+};
+
+// Hash the password before saving
+userSchema.pre('save', async function (next) {
+    const user = this;
+
+    if (user.isModified('hashed_password')) {
+        user.hashed_password = await bcrypt.hash(user.hashed_password, 10);
+    }
+
+    next();
+});
+
+/* 
+    authenticate: function(plainText) {
+        return this.encryptPassword(plainText) === this.hashed_password;
+    }
+*/
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;

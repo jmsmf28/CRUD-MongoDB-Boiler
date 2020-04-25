@@ -7,8 +7,15 @@ const appRouter = require('./routers/app')
 
 const app = express()
 
+// middleware
+app.use((req, res, next) => {
+    console.log(req.method, req.path)
+    next()
+})
+
 app.use(express.json())
 
+// routes
 app.use(userRouter)
 app.use(taskRouter)
 app.use(appRouter)
@@ -21,6 +28,6 @@ app.use(appRouter)
 
 const port = process.env.PORT || 8000
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`)
-})
+app.listen(port, () =>
+    console.log(`Your server is running on port ${port}`)
+);
