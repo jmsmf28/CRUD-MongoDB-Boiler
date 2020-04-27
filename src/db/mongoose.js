@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 
-const databaseUrl = 'mongodb://localhost:27017/task-app-api'
-
+const databaseUrl = 'mongodb://localhost:27017/task-app'
 mongoose.connect(databaseUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

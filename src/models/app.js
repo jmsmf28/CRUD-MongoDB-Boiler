@@ -8,14 +8,15 @@ const appSchema = new mongoose.Schema({
     description: {
         type: String
     },
-    user_id: {
-        type: String,
-        required: true
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
     },
     actions: {
         type: String,
-        default:'{ dirs:{controllers, db, models, routes, validators}, files:{}}'
-    }    
+        default: '{ dirs:{controllers, db, models, routes, validators}, files:{}}'
+    }
 })
 
 module.exports = mongoose.model('App', appSchema)

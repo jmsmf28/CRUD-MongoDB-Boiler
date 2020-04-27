@@ -8,10 +8,10 @@ const appRouter = require('./routers/app')
 const app = express()
 
 // middleware
+/* // maintenance middleware
 app.use((req, res, next) => {
-    console.log(req.method, req.path)
-    next()
-})
+    res.status(500).send('Be back soon! We are in maintenance!')
+}) */
 
 app.use(express.json())
 

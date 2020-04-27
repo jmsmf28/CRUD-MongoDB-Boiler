@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const App = require('./app')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -45,12 +46,29 @@ const userSchema = new mongoose.Schema({
     timestamp: true,
 });
 
+userSchema.virtual('apps', {
+    ref: 'App',
+    localField: '_id',
+    foreignField: 'owner'
+})
+
+
+userSchema.methods.toJSON = function () {
+    const user = this
+    const userObject = user.toObject()
+
+    delete userObject.hashed_password
+    delete userObject.tokens
+
+    return userObject
+}
+
 userSchema.methods.generateAuthToken = async function () {
     const user = this
     const token = jwt.sign({
         _id: user._id.toString()
     }, '2313123123121vdsfdsgsd58***a+', {
-        expiresIn: '2h'
+        expiresIn: '7 days'
     })
 
     user.tokens = user.tokens.concat({
@@ -91,11 +109,14 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
-/* 
-    authenticate: function(plainText) {
-        return this.encryptPassword(plainText) === this.hashed_password;
-    }
-*/
+// Delete user tasks when user is removed
+userSchema.pre('remove', async function (next) {
+    const user = this
+    await App.deleteMany({
+        owner: user._id
+    })
+    next()
+})
 
 const User = mongoose.model('User', userSchema);
 
